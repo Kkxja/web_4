@@ -22,6 +22,13 @@ program.parse();
 
 const options = program.opts();
 
+function cleanString(value) {
+    if (value === undefined || value === null || value === 'null') {
+        return '';
+    }
+    return value;
+}
+
 function sendJson(res, status, body) {
     res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(body);
@@ -53,13 +60,13 @@ function buildResult(records, showPayment, minValue) {
         }
 
         const item = {
-            booking_id: record?.Booking_ID ?? null,
-            vehicle_type: record?.Vehicle_Type ?? null,
+            booking_id: cleanString(record?.Booking_ID),
+            vehicle_type: cleanString(record?.Vehicle_Type),
             booking_value: value,
         };
 
         if (showPayment) {
-            item.payment_method = record?.Payment_Method ?? null;
+            item.payment_method = cleanString(record?.Payment_Method);
         }
 
         result.push(item);
