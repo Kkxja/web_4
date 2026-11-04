@@ -63,7 +63,13 @@ function buildResult(records, showPayment, minValue) {
 }
 
 const server = http.createServer((req, res) => {
-    const url = new URL(req.url, 'http://localhost');
+    let url;
+    try {
+        url = new URL(req.url, 'http://localhost');
+    } catch {
+        sendError(res, 400, 'Некоректна адреса запиту');
+        return;
+    }
 
     if (url.pathname !== '/') {
     sendError(res, 404, 'Маршрут не знайдено');
@@ -100,7 +106,20 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    sendJson(res, 200, JSON.stringify(buildResult(data, showPayment, minValue)));
+    const body = JSON.stringify(buildResult(data, showPayment, minValue));
+
+    if (!options.output) {
+        sendJson(res, 200, body);
+        return;
+    }
+
+    fs.writeFile(options.output, body, 'utf-8', (writeErr) => {
+        if (writeErr) {
+            sendError(res, 500, 'Не вдалося записати у вихідний файл');
+            return;
+        }
+        sendJson(res, 200, body);
+    });
     });
 });
 
