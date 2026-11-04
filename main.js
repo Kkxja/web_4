@@ -1,4 +1,4 @@
-import { Command } from 'commander';
+import { Command, InvalidArgumentError } from 'commander';
 import fs from 'node:fs';
 import http from 'node:http';
 
@@ -9,7 +9,13 @@ program.helpOption('--help', 'показати довідку');
 program
     .requiredOption('-i, --input <path>', 'шлях до файлу даних')
     .requiredOption('-h, --host <address>', 'адреса сервера')
-    .requiredOption('-p, --port <number>', 'порт сервера')
+    .requiredOption('-p, --port <number>', 'порт сервера', (value) => {
+    const port = Number(value);
+    if (!Number.isInteger(port) || port < 1 || port > 65535) {
+        throw new InvalidArgumentError('Порт має бути цілим числом від 1 до 65535');
+    }
+    return port;
+    })
     .option('-o, --output <path>', 'файл, у який записується остання надіслана відповідь');
 
 program.parse();
