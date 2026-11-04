@@ -16,22 +16,42 @@ program.parse();
 
 const options = program.opts();
 
+function sendJson(res, status, body) {
+  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+  res.end(body);
+}
+
+function sendError(res, status, message) {
+  sendJson(res, status, JSON.stringify({ error: message }));
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
 
   if (url.pathname !== '/') {
-    res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ error: 'Маршрут не знайдено' }));
+    sendError(res, 404, 'Маршрут не знайдено');
     return;
   }
 
-  res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-  res.end(JSON.stringify({ message: 'Сервер працює' }));
+  fs.readFile(options.input, 'utf-8', (err, raw) => {
+    if (err) {
+      sendError(res, 500, 'Не вдалося прочитати файл даних');
+      return;
+    }
+
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      sendError(res, 500, 'Файл даних пошкоджено: некоректний JSON');
+      return;
+    }
+
+    sendJson(res, 200, JSON.stringify(data));
+  });
 });
 
-server.listen(options.port, options.host, () => {
-  console.log(`Сервер запущено на http://${options.host}:${options.port}`);
-});
+
 
 fs.access(options.input, fs.constants.F_OK, (err) => {
   if (err) {
@@ -43,5 +63,3 @@ fs.access(options.input, fs.constants.F_OK, (err) => {
     console.log(`Сервер запущено на http://${options.host}:${options.port}`);
   });
 });
-
-console.log(options);
